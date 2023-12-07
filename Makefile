@@ -3,11 +3,11 @@ PROJNAME := helloworld
 
 # ---------------------
 
-# tbs 1.0.0-RC4
+# tbs 1.0.0-RC5
 
 # 1. INTRODUCTION
 # This is tbs 1.0.0-RC4, the trivial build system
-# by jlxip, September 9th 2023
+# by jlxip, December 7th, 2023
 # Presenting: a Makefile for C/C++/asm projects
 # This is public domain; feel free to copy/paste, modify, and share me.
 # /-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|
@@ -144,6 +144,8 @@ PROJNAME := helloworld
 
 # 3. CHANGELOG
 # Versions follow SemVer 2.0.0
+# - 1.0.0-RC5 (2023-12-07):
+#   - Fixed bug with empty EXCLUDE
 # - 1.0.0-RC4 (2023-09-09):
 #   - Fixed "src" being hardcoded in CSRC, CXXSRC and ASMSRC definitions
 #   - Fixed "src" and "obj" being hardcoded in OBJPATHS definition
@@ -345,7 +347,10 @@ endif
 OBJS := $(COBJ) $(CXXOBJ) $(ASMOBJ)
 
 # The following is the $(OBJPATH) directory hierarchy
-OBJPATHS := $(shell find $(SRCPATH) -type d \( $(EXCLUDE:%=! -path './%') \))
+ifdef EXCLUDE
+    EXCLUDE := \( $(EXCLUDE:%=! -path './%') \)
+endif
+OBJPATHS := $(shell find $(SRCPATH) -type d $(EXCLUDE))
 OBJPATHS := $(OBJPATHS:$(SRCPATH)%=$(OBJPATH)%)
 # Example: OBJPATHS := obj obj/utils
 
