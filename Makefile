@@ -6,7 +6,7 @@ PROJNAME := helloworld
 # tbs 1.0.0-RC5
 
 # 1. INTRODUCTION
-# This is tbs 1.0.0-RC4, the trivial build system
+# This is tbs 1.0.0-RC5, the trivial build system
 # by jlxip, December 7th, 2023
 # Presenting: a Makefile for C/C++/asm projects
 # This is public domain; feel free to copy/paste, modify, and share me.
