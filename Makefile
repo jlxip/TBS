@@ -3,11 +3,11 @@ PROJNAME := helloworld
 
 # ---------------------
 
-# tbs 1.0.0-RC5
+# tbs 1.0.0-RC6
 
 # 1. INTRODUCTION
-# This is tbs 1.0.0-RC5, the trivial build system
-# by jlxip, December 7th, 2023
+# This is tbs 1.0.0-RC6, the trivial build system
+# by jlxip, February 16th, 2024
 # Presenting: a Makefile for C/C++/asm projects
 # This is public domain; feel free to copy/paste, modify, and share me.
 # /-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|
@@ -61,6 +61,9 @@ PROJNAME := helloworld
 # Pattern exclusions are possible. Set $(EXCLUDE) to a space-separated list
 # of file path patterns to be ignored when listing the sources. Example:
 # EXCLUDE := utils/removeme.cpp utils/debug/*.asm ignore/*
+# If you want to follow symbolic links, set $(FOLLOWSYMLINKS).
+# Actually, $(FOLLOWSYMLINKS) just augments $(FINDFLAGS), which you can set too.
+# $(FINDFLAGS) is for 'find' options that come BEFORE the path.
 
 # 2.3. COMPILERS
 # tbs will compile all C, C++, and asm sources under $(SRCPATH) and link them
@@ -144,6 +147,8 @@ PROJNAME := helloworld
 
 # 3. CHANGELOG
 # Versions follow SemVer 2.0.0
+# - 1.0.0-RC6 (2024-02-16):
+#   - Inclusion of $(FINDFLAGS) and $(FOLLOWSYMLINKS)
 # - 1.0.0-RC5 (2023-12-07):
 #   - Fixed bug with empty EXCLUDE
 # - 1.0.0-RC4 (2023-09-09):
@@ -312,19 +317,26 @@ endif
 CSRC := \( $(CSRC:JLXIP-o%=%) \)
 CXXSRC := \( $(CXXSRC:JLXIP-o%=%) \)
 ASMSRC := \( $(ASMSRC:JLXIP-o%=%) \)
-# Example: CXXSRC := ( -iname '*.cpp' -o -iname '*.cc' )
+# e.g.: CXXSRC := ( -iname '*.cpp' -o -iname '*.cc' )
 
 ifdef EXCLUDE
     CSRC := $(CSRC) \( $(EXCLUDE:%=! -path './%') \)
     CXXSRC := $(CXXSRC) \( $(EXCLUDE:%=! -path './%') \)
     ASMSRC := $(ASMSRC) \( $(EXCLUDE:%=! -path './%') \)
 endif
-# Example: CXXSRC := ( -iname '*.cpp' -o -iname '*.cc' ) ( ! -iname './debug/*' )
+# e.g.: CXXSRC := ( -iname '*.cpp' -o -iname '*.cc' ) ( ! -iname './debug/*' )
+
+# Find flags
+ifdef FOLLOWSYMLINKS
+    FINDFLAGS += -L
+endif
+FINDCMD := find $(FINDFLAGS)
 
 # Find!
-CSRC := $(shell cd $(SRCPATH) && find . -type f $(CSRC) | sed 's/\.\///g')
-CXXSRC := $(shell cd $(SRCPATH) && find . -type f $(CXXSRC) | sed 's/\.\///g')
-ASMSRC := $(shell cd $(SRCPATH) && find . -type f $(ASMSRC) | sed 's/\.\///g')
+CDFINDCMD := cd $(SRCPATH) && $(FINDCMD)
+CSRC := $(shell $(CDFINDCMD) . -type f $(CSRC) | sed 's/\.\///g')
+CXXSRC := $(shell $(CDFINDCMD) . -type f $(CXXSRC) | sed 's/\.\///g')
+ASMSRC := $(shell $(CDFINDCMD) . -type f $(ASMSRC) | sed 's/\.\///g')
 # Example: CXXSRC := main.c utils/solve.c
 
 # Let's build the objects strings now
@@ -350,7 +362,7 @@ OBJS := $(COBJ) $(CXXOBJ) $(ASMOBJ)
 ifdef EXCLUDE
     EXCLUDE := \( $(EXCLUDE:%=! -path './%') \)
 endif
-OBJPATHS := $(shell find $(SRCPATH) -type d $(EXCLUDE))
+OBJPATHS := $(shell $(FINDCMD) $(SRCPATH) -type d $(EXCLUDE))
 OBJPATHS := $(OBJPATHS:$(SRCPATH)%=$(OBJPATH)%)
 # Example: OBJPATHS := obj obj/utils
 
