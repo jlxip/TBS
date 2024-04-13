@@ -3,11 +3,11 @@ PROJNAME := helloworld
 
 # ---------------------
 
-# tbs 1.0.0-RC6
+# tbs 1.0.0-RC7
 
 # 1. INTRODUCTION
-# This is tbs 1.0.0-RC6, the trivial build system
-# by jlxip, February 16th, 2024
+# This is tbs 1.0.0-RC7, the trivial build system
+# by jlxip, March 3rd, 2024
 # Presenting: a Makefile for C/C++/asm projects
 # This is public domain; feel free to copy/paste, modify, and share me.
 # /-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|
@@ -82,10 +82,11 @@ PROJNAME := helloworld
 # 2.4. FLAGS
 # $(CC) and $(CXX) receive the flags given in $(CFLAGS) and $(CXXFLAGS)
 # respectively. These variables are built from others and can be changed:
-# - $(WALL), defaults to "-Wall -Wextra -Werror"
+# - $(WALL), defaults to "-Wall -Wextra -Werror -pedantic"
 # - $(OL), defaults to "-O2"
 # - $(LTO), defaults to "-flto"
 # The special variable $(ISLIB), if set, will add the flag "-fPIC".
+# You can set CSTD and CXXSTD to the pursued standards: "c99", "c++11"...
 # $(ASM) receives the flags given in $(ASMFLAGS).
 
 # 2.5. LINKER
@@ -96,7 +97,7 @@ PROJNAME := helloworld
 # setting it to "ld" may be desirable.
 # Following the ideas expressed in the previous section, its flags are set
 # in $(LINKFLAGS), and they can be configured indirectly via variables:
-# - $(RELRO), defaults to "-Wl,-z,relro,-z,now"
+# - $(RELRO), defaults to "-Wl,-z,relro,-z,now", ONLY ON LINUX
 # - $(LTO), defaults to "-flto"
 # The (empty by default) variable $(LIBS) will append "-l" to the beginning
 # of each entry, so:
@@ -147,6 +148,10 @@ PROJNAME := helloworld
 
 # 3. CHANGELOG
 # Versions follow SemVer 2.0.0
+# - 1.0.0-RC7 (2024-03-03):
+#   - $(RELRO) is now on by default exclusively on Linux
+#   - Added "-pedantic" to default $(WALL)
+#   - Added $(CSTD) and $(CXXSTD)
 # - 1.0.0-RC6 (2024-02-16):
 #   - Inclusion of $(FINDFLAGS) and $(FOLLOWSYMLINKS)
 # - 1.0.0-RC5 (2023-12-07):
@@ -235,15 +240,23 @@ ASMEX ?= .asm .s
 ASM ?= nasm
 
 # Default values for CC and CXX flags
-WALL ?= -Wall -Wextra -Werror
+WALL ?= -Wall -Wextra -Werror -pedantic
 OL ?= -O2
 ifndef DEBUG
     LTO ?= -flto
 endif
 
+# Standards
+ifdef CSTD
+    _CSTD := -std=$(CSTD)
+endif
+ifdef CXXSTD
+    _CXXSTD := -std=$(CXXSTD)
+endif
+
 # Set up CFLAGS and CXXFLAGS
-CFLAGS += $(WALL) $(OL) $(LTO)
-CXXFLAGS += $(WALL) $(OL) $(LTO)
+CFLAGS += $(_CSTD) $(WALL) $(OL) $(LTO)
+CXXFLAGS += $(_CXXSTD) $(WALL) $(OL) $(LTO)
 ifdef ISLIB
     CFLAGS += -fPIC
     CXXFLAGS += -fPIC
@@ -256,7 +269,10 @@ ifndef LINK
 endif
 
 # LINKFLAGS
-RELRO ?= -Wl,-z,relro,-z,now
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+    RELRO ?= -Wl,-z,relro,-z,now
+endif
 LINKFLAGS += $(RELRO) $(WALL) $(OL) $(LTO)
 
 # Construct LIBS if given
